@@ -14,171 +14,110 @@
  * limitations under the License.
  */
 
-buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
-    }
+plugins {
+    id("java")
+    id("maven-publish")
+    id("com.jfrog.bintray") version "1.7.3"
 }
 
 ext.projectVersion = projectVersion
-if (System.getenv('BINTRAY_USER') == null) {
-    ext.projectVersion = ext.projectVersion + '-SNAPSHOT'
+if (System.getenv("BINTRAY_USER") == null) {
+    ext.projectVersion = ext.projectVersion + "-SNAPSHOT"
 }
 println "##teamcity[setParameter name='java.annotations.version' value='$projectVersion']"
 
-allprojects {
-    group 'org.jetbrains'
-    version rootProject.ext.projectVersion
+group "org.jetbrains"
+version rootProject.ext.projectVersion
+
+repositories {
+    mavenCentral()
 }
 
-subprojects {
-    apply plugin: 'java'
-    apply plugin: 'maven-publish'
-    apply plugin: 'com.jfrog.bintray'
+archivesBaseName = "annotations"
+sourceCompatibility = 1.8
 
-    repositories {
-        mavenCentral()
+task mainJar(type: Jar) {
+    manifest {
+        attributes("Automatic-Module-Name": "org.jetbrains." + archivesBaseName.replace('-', '_'))
     }
+    from sourceSets.main.output
 }
 
-project(':java5').archivesBaseName = 'annotations-java5'
-project(':java8').archivesBaseName = 'annotations'
+task sourceJar(type: Jar) {
+    baseName = archivesBaseName + "-sources"
+    from sourceSets.main.java
+}
 
-configure([project(':java5'), project(':java8')]) {
-    task mainJar(type: Jar) {
-        manifest {
-            attributes('Automatic-Module-Name': 'org.jetbrains.' + archivesBaseName.replace('-', '_'))
-        }
-    }
+task javadocJar(type: Jar) {
+    from javadoc
+}
 
-    task sourceJar(type: Jar) {
-        baseName = archivesBaseName + '-sources'
-    }
+artifacts {
+    archives mainJar, sourceJar
+}
 
-    task javadocJar(type: Jar) {
-        from javadoc
-    }
+javadoc {
+    source = [sourceSets.main.java]
+}
 
-    artifacts {
-        archives mainJar, sourceJar
-    }
-
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                artifactId archivesBaseName
-                artifact mainJar
-                artifact sourceJar {
-                    classifier 'sources'
-                }
-                artifact javadocJar {
-                    classifier 'javadoc'
-                }
-                pom.withXml {
-                    asNode().children().last() + {
-                        resolveStrategy = DELEGATE_FIRST
-                        name 'JetBrains Java Annotations'
-                        description 'A set of annotations used for code inspection support and code documentation.'
-                        url 'https://github.com/JetBrains/java-annotations'
-                        scm {
-                            url 'https://github.com/JetBrains/java-annotations'
-                            connection 'scm:git:git://github.com/JetBrains/java-annotations.git'
-                            developerConnection 'scm:git:ssh://github.com:JetBrains/java-annotations.git'
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId archivesBaseName
+            artifact mainJar
+            artifact sourceJar {
+                classifier "sources"
+            }
+            artifact javadocJar {
+                classifier "javadoc"
+            }
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = DELEGATE_FIRST
+                    name "JetBrains Java Annotations"
+                    description "A set of annotations used for code inspection support and code documentation."
+                    url "https://github.com/JetBrains/java-annotations"
+                    scm {
+                        url "https://github.com/JetBrains/java-annotations"
+                        connection "scm:git:git://github.com/JetBrains/java-annotations.git"
+                        developerConnection "scm:git:ssh://github.com:JetBrains/java-annotations.git"
+                    }
+                    licenses {
+                        license {
+                            name "The Apache Software License, Version 2.0"
+                            url "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                            distribution "repo"
                         }
-                        licenses {
-                            license {
-                                name 'The Apache Software License, Version 2.0'
-                                url 'https://www.apache.org/licenses/LICENSE-2.0.txt'
-                                distribution 'repo'
-                            }
-                        }
-                        developers {
-                            developer {
-                                id 'JetBrains'
-                                name 'JetBrains Team'
-                                organization 'JetBrains'
-                                organizationUrl 'https://www.jetbrains.com'
-                            }
+                    }
+                    developers {
+                        developer {
+                            id "JetBrains"
+                            name "JetBrains Team"
+                            organization "JetBrains"
+                            organizationUrl "https://www.jetbrains.com"
                         }
                     }
                 }
+            }
 
+        }
+    }
+}
+if (System.getenv("BINTRAY_USER") != null) {
+    bintray {
+        user = System.getenv("BINTRAY_USER")
+        key = System.getenv("BINTRAY_KEY")
+        publish = true
+        publications = ["mavenJava"]
+        pkg {
+            userOrg = "jetbrains"
+            repo = "intellij-redist"
+            name = "org.jetbrains:" + archivesBaseName
+            version {
+                name = rootProject.ext.projectVersion
             }
         }
     }
-    if (System.getenv('BINTRAY_USER') != null) {
-        bintray {
-            user = System.getenv('BINTRAY_USER')
-            key = System.getenv('BINTRAY_KEY')
-            publish = true
-            publications = ['mavenJava']
-            pkg {
-                userOrg = 'jetbrains'
-                repo = 'intellij-redist'
-                name = 'org.jetbrains:' + archivesBaseName
-                version {
-                    name = rootProject.ext.projectVersion
-                }
-            }
-        }
-    }
-
 }
 
-configure(project(':java5')) {
-    def generatedSourcesDir = "${buildDir}/generated/"
-
-    sourceSets {
-        generated {
-            java.srcDir generatedSourcesDir
-        }
-    }
-
-    task generateSrc(type: Copy) {
-        from project(':common').sourceSets.main.java
-        into generatedSourcesDir
-        filter { line -> line.replaceAll(", ElementType.TYPE_USE", "")}
-    }
-
-    compileJava {
-        dependsOn(generateSrc)
-        source sourceSets.generated.java
-    }
-
-    mainJar {
-        from sourceSets.main.output
-    }
-
-    sourceJar {
-        dependsOn(generateSrc)
-        from sourceSets.generated.java
-    }
-
-    javadoc {
-        source = [sourceSets.generated.java]
-    }
-}
-
-configure(project(':java8')) {
-    dependencies {
-        compile project(':common')
-    }
-
-    mainJar {
-        from sourceSets.main.output
-        from project(':common').sourceSets.main.output
-    }
-
-    sourceJar {
-        from sourceSets.main.java
-        from project(':common').sourceSets.main.java
-    }
-
-    javadoc {
-        source = [sourceSets.main.java, project(':common').sourceSets.main.java]
-    }
-}
 

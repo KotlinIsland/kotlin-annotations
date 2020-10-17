@@ -13,23 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jetbrains.annotations;
+package org.intellij.lang.annotations;
 
 import java.lang.annotation.*;
 
 /**
- * An annotation which marks a {@link java.util.Collection} or {@link java.util.Map} type
- * as unmodifiable. A collection or a map is unmodifiable if any mutator methods
- * (e.g. {@link java.util.Collection#add(Object)}) throw exception or have no effect,
- * and the object references stored as collection elements, map keys, and map values 
- * are never changed. The referenced objects themselves still could be changed if they
- * are mutable. 
- * 
- * @see UnmodifiableView
- * @since 19.0.0
+ * An annotation which allows to specify for integral type (byte, char, short, int, long) an allowed values range.
+ * Applying this annotation to other types is not correct.
+ * <p>
+ * Example:
+ * <pre>{@code public @Range(from = 0, to = Integer.MAX_VALUE) int length() { 
+ *   return this.length; // returns a non-negative integer
+ * }}</pre>
+ *
+ * @since 17.0.0
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE_USE})
-public @interface Unmodifiable {
+public @interface Range {
+  /**
+   * @return minimal allowed value (inclusive)
+   */
+  long from();
+
+  /**
+   * @return maximal allowed value (inclusive)
+   */
+  long to();
 }
