@@ -41,7 +41,7 @@ package org.intellij.lang.annotations
     AnnotationTarget.LOCAL_VARIABLE,
     AnnotationTarget.ANNOTATION_CLASS,
 )
-annotation class Language(
+expect annotation class Language(
     /**
      * Language name like "JAVA", "HTML", "XML", "RegExp", etc.
      * The complete list of supported languages is not specified. However, at least the following languages should be

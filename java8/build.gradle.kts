@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package org.jetbrains.annotations;
+plugins {
+    kotlin("multiplatform") version "1.4.30-RC"
+}
+kotlin {
+    jvm {
+        withJava()
+        java.sourceCompatibility = JavaVersion.VERSION_1_8
+        java.targetCompatibility = JavaVersion.VERSION_1_8
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "1.8"
+            }
+        }
+    }
+    js(BOTH) {
+        browser()
+        nodejs()
+    }
+}
 
-import java.lang.annotation.*;
-
-/**
- * The annotation should be applied to overridable non-abstract method
- * and indicates that all the overriders must invoke this method via 
- * superclass method invocation expression. The static analysis tools 
- * may report a warning if overrider fails to invoke this method.
- * 
- * @since 20.0.0
- */
-@Documented
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.CLASS)
-public @interface MustBeInvokedByOverriders {}
