@@ -14,5 +14,6 @@
  * limitations under the License.
  */
 
-sourceCompatibility = 1.5
+java.sourceCompatibility = JavaVersion.VERSION_1_5
+
 
