@@ -14,4 +14,18 @@
  * limitations under the License.
  */
 
-sourceCompatibility = 1.8
+plugins {
+    kotlin("multiplatform")
+}
+
+kotlin {
+    jvm {
+        withJava()
+        compilations.all {
+            kotlinOptions.useIR = true
+            kotlinOptions.jvmTarget = "1.8"
+        }
+    }
+    js(IR) { browser(); nodejs() }
+}
+
